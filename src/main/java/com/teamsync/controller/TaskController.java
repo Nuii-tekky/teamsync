@@ -3,7 +3,6 @@ package com.teamsync.controller;
 import com.teamsync.entity.Task;
 import com.teamsync.service.TaskService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,50 +16,48 @@ public class TaskController {
 
     @Autowired
     public TaskController(TaskService taskService) {
-      this.taskService = taskService;
+        this.taskService = taskService;
     }
 
     // Create a new task
     @PostMapping
-    public ResponseEntity<Task> createTask(@RequestBody Task task) {
-      Task savedTask = taskService.saveTask(task);
-      return ResponseEntity.ok(savedTask);
+    public Task createTask(@RequestBody Task task) {
+        return taskService.saveTask(task);
     }
 
     // Retrieve a task by ID
     @GetMapping("/{id}")
-    public ResponseEntity<Task> getTaskById(@PathVariable Long id) {
+    public Task getTaskById(@PathVariable Long id) {
         return taskService.getTaskById(id)
-        .map(ResponseEntity::ok)
-        .orElseGet(() -> ResponseEntity.notFound().build());
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found with id " + id));
     }
 
     // Retrieve all tasks
     @GetMapping
-    public ResponseEntity<List<Task>> getAllTasks() {
-        List<Task> tasks = taskService.getAllTasks();
-        return ResponseEntity.ok(tasks);
+    public List<Task> getAllTasks() {
+        return taskService.getAllTasks();
     }
 
     // Retrieve tasks by status
     @GetMapping("/status/{status}")
-    public ResponseEntity<List<Task>> getTasksByStatus(@PathVariable String status) {
-        List<Task> tasks = taskService.getTasksByStatus(status);
-        return ResponseEntity.ok(tasks);
+    public List<Task> getTasksByStatus(@PathVariable String status) {
+        return taskService.getTasksByStatus(status);
     }
 
     // Update a task
     @PutMapping("/{id}")
-    public ResponseEntity<Task> updateTask(@PathVariable Long id, @RequestBody Task task) {
-      return taskService.getTaskById(id).map(existingTask -> {task.set(id); // Ensure ID matches
-      Task updatedTask = taskService.saveTask(task);
-      return ResponseEntity.ok(updatedTask);}).orElseGet(() -> ResponseEntity.notFound().build());
+    public Task updateTask(@PathVariable Long id, @RequestBody Task task) {
+        return taskService.getTaskById(id)
+                .map(existingTask -> {
+                    task.setId(id);
+                    return taskService.saveTask(task);
+                })
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found with id " + id));
     }
 
     // Delete a task
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteTask(@PathVariable Long id) {
+    public void deleteTask(@PathVariable Long id) {
         taskService.deleteTask(id);
-        return ResponseEntity.noContent().build();
     }
 }
