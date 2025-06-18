@@ -2,27 +2,29 @@ package com.teamsync.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
-import java.time.LocalDateTime;
 
+import java.time.LocalDateTime;
+import java.util.UUID;
+
+// Entity representing a task
 @Data
 @Entity
 @Table(name = "tasks")
 public class Task {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(columnDefinition = "UUID")
+    private UUID id;
 
     @Column(nullable = false)
     private String title;
 
-    @Column
+    @Column(nullable = false)
+    private String status;
+
     private String description;
 
-    @Column(nullable = false)
-    private String status; // e.g., "pending", "in_progress", "completed"
-
-    @Column(name = "due_date")
     private LocalDateTime dueDate;
 
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -31,7 +33,6 @@ public class Task {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    // Set timestamps before persisting or updating
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();

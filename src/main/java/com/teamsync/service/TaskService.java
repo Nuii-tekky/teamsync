@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 // Service layer for task-related business logic
 @Service
@@ -19,34 +20,34 @@ public class TaskService {
         this.taskRepository = taskRepository;
     }
 
-    // Create or update a task
+    // Save a task with validation
     public Task saveTask(Task task) {
-      if (task.getTitle() == null || task.getTitle().trim().isEmpty()) {
-        throw new IllegalArgumentException("Task title cannot be empty");
-      }
-      if (task.getStatus() == null || task.getStatus().trim().isEmpty()) {
-        throw new IllegalArgumentException("Task status cannot be empty");
-      }
-      return taskRepository.save(task);
+        if (task.getTitle() == null || task.getTitle().trim().isEmpty()) {
+            throw new IllegalArgumentException("Task title cannot be empty");
+        }
+        if (task.getStatus() == null || task.getStatus().trim().isEmpty()) {
+            throw new IllegalArgumentException("Task status cannot be empty");
+        }
+        return taskRepository.save(task);
     }
 
     // Retrieve a task by ID
-    public Optional<Task> getTaskById(Long id) {
-      return taskRepository.findById(id);
+    public Optional<Task> getTaskById(UUID id) {
+        return taskRepository.findById(id);
     }
 
     // Retrieve all tasks
     public List<Task> getAllTasks() {
-      return taskRepository.findAll();
+        return taskRepository.findAll();
     }
 
     // Retrieve tasks by status
     public List<Task> getTasksByStatus(String status) {
-      return taskRepository.findByStatus(status);
+        return taskRepository.findByStatus(status);
     }
 
     // Delete a task by ID
-    public void deleteTask(Long id) {
-      taskRepository.deleteById(id);
+    public void deleteTask(UUID id) {
+        taskRepository.deleteById(id);
     }
 }

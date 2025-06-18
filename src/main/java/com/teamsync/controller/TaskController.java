@@ -1,11 +1,13 @@
 package com.teamsync.controller;
 
 import com.teamsync.entity.Task;
+import com.teamsync.exceptions.ResourceNotFoundException;
 import com.teamsync.service.TaskService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 // REST controller for task-related endpoints
 @RestController
@@ -27,7 +29,7 @@ public class TaskController {
 
     // Retrieve a task by ID
     @GetMapping("/{id}")
-    public Task getTaskById(@PathVariable Long id) {
+    public Task getTaskById(@PathVariable UUID id) {
         return taskService.getTaskById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found with id " + id));
     }
@@ -46,7 +48,7 @@ public class TaskController {
 
     // Update a task
     @PutMapping("/{id}")
-    public Task updateTask(@PathVariable Long id, @RequestBody Task task) {
+    public Task updateTask(@PathVariable UUID id, @RequestBody Task task) {
         return taskService.getTaskById(id)
                 .map(existingTask -> {
                     task.setId(id);
@@ -57,7 +59,7 @@ public class TaskController {
 
     // Delete a task
     @DeleteMapping("/{id}")
-    public void deleteTask(@PathVariable Long id) {
+    public void deleteTask(@PathVariable UUID id) {
         taskService.deleteTask(id);
     }
 }

@@ -1,10 +1,11 @@
 package com.teamsync.config;
 
 import com.teamsync.dto.ApiResponse;
-import com.teamsync.exception.ResourceNotFoundException;
+import com.teamsync.exceptions.ResourceNotFoundException;
 import org.springframework.core.MethodParameter;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.http.server.ServerHttpResponse;
@@ -18,7 +19,6 @@ public class GlobalResponseHandler implements ResponseBodyAdvice<Object> {
 
     @Override
     public boolean supports(MethodParameter returnType, Class<? extends HttpMessageConverter<?>> converterType) {
-        // Apply to all controllers except those returning ApiResponse
         return !returnType.getParameterType().equals(ApiResponse.class);
     }
 
@@ -26,16 +26,13 @@ public class GlobalResponseHandler implements ResponseBodyAdvice<Object> {
     public Object beforeBodyWrite(Object body, MethodParameter returnType, MediaType selectedContentType,
                                   Class<? extends HttpMessageConverter<?>> selectedConverterType,
                                   ServerHttpRequest request, ServerHttpResponse response) {
-        // Skip wrapping for null responses (e.g., 204 No Content)
         if (body == null) {
             return null;
         }
-        // Use generic message based on HTTP method
         String message = getGenericMessage(request.getMethod().toString(), body);
         return ApiResponse.success(message, body);
     }
 
-    // Generic messages based on HTTP method
     private String getGenericMessage(String method, Object body) {
         switch (method) {
             case "POST":
@@ -52,20 +49,20 @@ public class GlobalResponseHandler implements ResponseBodyAdvice<Object> {
     }
 
     @ExceptionHandler(ResourceNotFoundException.class)
-    public ApiResponse<Void> handleResourceNotFoundException(ResourceNotFoundException ex, ServerHttpResponse response) {
-        response.setStatusCode(HttpStatus.NOT_FOUND);
-        return ApiResponse.error(ex.getMessage(), null);
+    public ResponseEntity<ApiResponse<Void>> handleResourceNotFoundException(ResourceNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error(ex.getMessage(), null));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
-    public ApiResponse<Void> handleIllegalArgumentException(IllegalArgumentException ex, ServerHttpResponse response) {
-        response.setStatusCode(HttpStatus.BAD_REQUEST);
-        return ApiResponse.error(ex.getMessage(), null);
+    public ResponseEntity<ApiResponse<Void>> handleIllegalArgumentException(IllegalArgumentException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(ex.getMessage(), null));
     }
 
     @ExceptionHandler(Exception.class)
-    public ApiResponse<Void> handleGenericException(Exception ex, ServerHttpResponse response) {
-        response.setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR);
-        return ApiResponse.error("An unexpected error occurred", null);
+    public ResponseEntity<ApiResponse<Void>> handleGenericException(Exception ex) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiResponse.error("An unexpected error occurred", null));
     }
 }
