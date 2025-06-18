@@ -35,7 +35,7 @@ public class TaskController {
     }
 
     // Retrieve all tasks
-    @GetMapping
+    @GetMapping({"", "/"})
     public List<Task> getAllTasks() {
         return taskService.getAllTasks();
     }
