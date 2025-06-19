@@ -1,14 +1,19 @@
 package com.teamsync.controller;
 
 import com.teamsync.config.JwtUtil;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Email;
 import com.teamsync.dto.ApiResponse;
 import com.teamsync.entity.User;
 import com.teamsync.service.UserService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Logger;
 
 @RestController
@@ -27,21 +32,27 @@ public class AuthController {
     private PasswordEncoder passwordEncoder;
 
     @PostMapping("/register")
-    public ResponseEntity<ApiResponse<User>> register(@RequestBody User user) {
+    public ResponseEntity<ApiResponse<Map<String, Object>>> register(@Valid @RequestBody User user) {
         logger.info("Registering user: " + user.getEmail());
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         User savedUser = userService.saveUser(user);
-        return ResponseEntity.ok(ApiResponse.success("User registered successfully", savedUser));
+        String token = jwtUtil.generateToken(savedUser.getId(), savedUser.getEmail());
+        Map<String, Object> responseData = new HashMap<>();
+        responseData.put("user", savedUser);
+        responseData.put("token", token);
+        return ResponseEntity.ok(ApiResponse.success("User registered successfully", responseData));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<String>> login(@RequestBody LoginRequest loginRequest) {
+    public ResponseEntity<ApiResponse<Map<String, Object>>> login(@Valid @RequestBody LoginRequest loginRequest) {
         logger.info("Login attempt for: " + loginRequest.getEmail());
         return userService.getUserByEmail(loginRequest.getEmail())
                 .filter(user -> passwordEncoder.matches(loginRequest.getPassword(), user.getPassword()))
                 .map(user -> {
                     String token = jwtUtil.generateToken(user.getId(), user.getEmail());
-                    return ResponseEntity.ok(ApiResponse.success("Login successful", token));
+                    Map<String, Object> responseData = new HashMap<>();
+                    responseData.put("token", token);
+                    return ResponseEntity.ok(ApiResponse.success("Login successful", responseData));
                 })
                 .orElseGet(() -> ResponseEntity.status(401)
                         .body(ApiResponse.error("Invalid email or password", null)));
@@ -49,22 +60,26 @@ public class AuthController {
 }
 
 class LoginRequest {
-  private String email;
-  private String password;
+    @NotBlank(message = "Email is required")
+    @Email(message = "Invalid email format")
+    private String email;
 
-  public String getEmail() {
-      return email;
-  }
+    @NotBlank(message = "Password is required")
+    private String password;
 
-  public void setEmail(String email) {
-      this.email = email;
-  }
+    public String getEmail() {
+        return email;
+    }
 
-  public String getPassword() {
-      return password;
-  }
+    public void setEmail(String email) {
+        this.email = email;
+    }
 
-  public void setPassword(String password) {
-      this.password = password;
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
     }
 }

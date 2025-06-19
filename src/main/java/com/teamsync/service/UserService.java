@@ -2,6 +2,7 @@ package com.teamsync.service;
 
 import com.teamsync.entity.User;
 import com.teamsync.repository.UserRepository;
+import com.teamsync.exceptions.DuplicateEmailException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -26,6 +27,9 @@ public class UserService {
     public User saveUser(User user) {
         if (user.getEmail() == null || user.getEmail().trim().isEmpty()) {
             throw new IllegalArgumentException("User email cannot be empty");
+        }
+        if (userRepository.existsByEmail(user.getEmail())) {
+            throw new DuplicateEmailException("Email is already registered");
         }
         if (user.getPassword() == null || user.getPassword().trim().isEmpty()) {
             throw new IllegalArgumentException("User password cannot be empty");
