@@ -1,7 +1,6 @@
 package com.teamsync.config;
 
 import com.teamsync.dto.ApiResponse;
-import com.teamsync.exceptions.DuplicateEmailException;
 import com.teamsync.exceptions.ResourceNotFoundException;
 import org.springframework.core.MethodParameter;
 import org.springframework.http.HttpStatus;
@@ -116,7 +115,7 @@ public class GlobalResponseHandler implements ResponseBodyAdvice<Object> {
 
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ApiResponse<Void>> handleResourceNotFoundException(ResourceNotFoundException ex) {
-        logger.warning("Resource not found: " + ex.getMessage());
+        logger.warning("Resource not found");
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(ApiResponse.error(ex.getMessage(), null));
     }
@@ -132,13 +131,6 @@ public class GlobalResponseHandler implements ResponseBodyAdvice<Object> {
     public ResponseEntity<ApiResponse<Void>> handleIllegalArgumentException(IllegalArgumentException ex) {
         logger.warning("Invalid argument: " + ex.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.error(ex.getMessage(), null));
-    }
-    
-    @ExceptionHandler(DuplicateEmailException.class)
-    public ResponseEntity<ApiResponse<Void>> handleDuplicateEmailException(DuplicateEmailException ex) {
-        logger.warning(ex.getMessage());
-        return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(ApiResponse.error(ex.getMessage(), null));
     }
 

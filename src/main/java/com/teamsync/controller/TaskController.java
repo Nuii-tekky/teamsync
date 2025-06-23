@@ -1,65 +1,58 @@
 package com.teamsync.controller;
 
+import com.teamsync.dto.ApiResponse;
+import com.teamsync.dto.TaskDTO;
 import com.teamsync.entity.Task;
-import com.teamsync.exceptions.ResourceNotFoundException;
 import com.teamsync.service.TaskService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.logging.Logger;
 
-// REST controller for task-related endpoints
 @RestController
 @RequestMapping("/api/tasks")
 public class TaskController {
 
-    private final TaskService taskService;
+    private static final Logger logger = Logger.getLogger(TaskController.class.getName());
 
     @Autowired
-    public TaskController(TaskService taskService) {
-        this.taskService = taskService;
+    private TaskService taskService;
+
+    @PostMapping("/users/{assigneeId}")
+    public ResponseEntity<ApiResponse<TaskDTO>> createTask(@RequestAttribute("userId") UUID assignerId, @PathVariable UUID assigneeId, @RequestBody Task task) {
+        logger.info("Admin creating task for assigner ID: " + assignerId + ", assignee ID: " + assigneeId);
+        TaskDTO createdTask = taskService.createTask(assignerId, assigneeId, task);
+        return ResponseEntity.ok(ApiResponse.success("Task created successfully", createdTask));
     }
 
-    // Create a new task
-    @PostMapping
-    public Task createTask(@RequestBody Task task) {
-        return taskService.saveTask(task);
+    @GetMapping("/users/{userId}")
+    public ResponseEntity<ApiResponse<List<Task>>> getTasksByUserId(@PathVariable UUID userId) {
+        logger.info("Fetching tasks for user ID: " + userId);
+        List<Task> tasks = taskService.getTasksByUserId(userId);
+        return ResponseEntity.ok(ApiResponse.success("Tasks retrieved successfully", tasks));
     }
 
-    // Retrieve a task by ID
     @GetMapping("/{id}")
-    public Task getTaskById(@PathVariable UUID id) {
-        return taskService.getTaskById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Task not found with id " + id));
+    public ResponseEntity<ApiResponse<Task>> getTaskById(@PathVariable UUID id) {
+        logger.info("Fetching task with ID: " + id);
+        Task task = taskService.getTaskById(id);
+        return ResponseEntity.ok(ApiResponse.success("Task retrieved successfully", task));
     }
 
-    // Retrieve all tasks
-    @GetMapping({"", "/"})
-    public List<Task> getAllTasks() {
-        return taskService.getAllTasks();
-    }
-
-    // Retrieve tasks by status
-    @GetMapping("/status/{status}")
-    public List<Task> getTasksByStatus(@PathVariable String status) {
-        return taskService.getTasksByStatus(status);
-    }
-
-    // Update a task
     @PutMapping("/{id}")
-    public Task updateTask(@PathVariable UUID id, @RequestBody Task task) {
-        return taskService.getTaskById(id)
-                .map(existingTask -> {
-                    task.setId(id);
-                    return taskService.saveTask(task);
-                })
-                .orElseThrow(() -> new ResourceNotFoundException("Task not found with id " + id));
+    public ResponseEntity<ApiResponse<Task>> updateTask(@PathVariable UUID id, @RequestBody Task taskDetails) {
+        logger.info("Updating task with ID: " + id);
+        Task updatedTask = taskService.updateTask(id, taskDetails);
+        return ResponseEntity.ok(ApiResponse.success("Task updated successfully", updatedTask));
     }
 
-    // Delete a task
     @DeleteMapping("/{id}")
-    public void deleteTask(@PathVariable UUID id) {
+    public ResponseEntity<ApiResponse<Void>> deleteTask(@PathVariable UUID id) {
+        logger.info("Deleting task with ID: " + id);
         taskService.deleteTask(id);
+        return ResponseEntity.ok(ApiResponse.success("Task deleted successfully", null));
     }
 }

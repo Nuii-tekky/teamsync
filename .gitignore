@@ -2,3 +2,5 @@ target/
 .env
 *.log
 rendash.sh
+token.txt
+
