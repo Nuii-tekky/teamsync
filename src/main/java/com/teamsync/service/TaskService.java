@@ -6,11 +6,15 @@ import com.teamsync.entity.User;
 import com.teamsync.exceptions.ResourceNotFoundException;
 import com.teamsync.repository.TaskRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.UUID;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 @Service
 public class TaskService {
@@ -29,15 +33,18 @@ public class TaskService {
         User assignee = userService.getUserById(assigneeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Assignee not found with id: " + assigneeId));
         task.setAssignee(assignee);
-        assignee.getTasks().add(task); // Sync bidirectional relationship
-        userService.saveUser(assignee); // Persist assignee with updated tasks
+        task.setPriority(Task.Priority.MEDIUM); // Default priority
         Task savedTask = taskRepository.save(task);
         return convertToDTO(savedTask, assigner);
     }
 
-    public List<Task> getTasksByUserId(UUID userId) {
-        logger.info("Fetching tasks for user ID: " + userId);
-        return taskRepository.findByAssigneeId(userId);
+    public List<TaskDTO> getTasksByUserId(UUID userId, int page, int size) {
+        logger.info("Fetching tasks for user ID: " + userId + " (page=" + page + ", size=" + size + ")");
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Task> taskPage = taskRepository.findByAssigneeId(userId, pageable);
+        return taskPage.getContent().stream()
+                .map(task -> convertToDTO(task, task.getAssignee()))
+                .collect(Collectors.toList());
     }
 
     public Task getTaskById(UUID id) {
@@ -53,6 +60,7 @@ public class TaskService {
         task.setDescription(taskDetails.getDescription());
         task.setStatus(taskDetails.getStatus());
         task.setDueDate(taskDetails.getDueDate());
+        task.setPriority(taskDetails.getPriority());
         return taskRepository.save(task);
     }
 
@@ -60,24 +68,34 @@ public class TaskService {
         logger.info("Deleting task with ID: " + id);
         Task task = getTaskById(id);
         User assignee = task.getAssignee();
-        assignee.getTasks().remove(task); // Sync removal
-        userService.saveUser(assignee); // Update assignee
+        if (assignee != null) {
+            assignee.getTasks().remove(task);
+            userService.saveUser(assignee);
+        }
         taskRepository.delete(task);
     }
 
-    private TaskDTO convertToDTO(Task task, User assigner) {
+    public long countTasksByUserId(UUID userId) {
+        return taskRepository.countByAssigneeId(userId);
+    }
+
+    public TaskDTO convertToDTO(Task task, User assigner) {
         TaskDTO dto = new TaskDTO();
         dto.setId(task.getId());
         dto.setTitle(task.getTitle());
         dto.setDescription(task.getDescription());
         dto.setStatus(task.getStatus().toString());
         dto.setDueDate(task.getDueDate());
+        dto.setCreatedAt(task.getCreatedAt());
+        dto.setUpdatedAt(task.getUpdatedAt());
+        dto.setPriority(task.getPriority() != null ? task.getPriority().toString() : null);
         dto.setAssignee(createUserSummary(task.getAssignee()));
         dto.setAssigner(createUserSummary(assigner));
         return dto;
     }
 
     private TaskDTO.UserSummary createUserSummary(User user) {
+        if (user == null) return null;
         TaskDTO.UserSummary summary = new TaskDTO.UserSummary();
         summary.setId(user.getId());
         summary.setEmail(user.getEmail());
