@@ -49,6 +49,6 @@ public class User {
     }
 
     @OneToMany(mappedBy = "assignee", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonManagedReference
+    @JsonManagedReference(value = "task-assignee") 
     private Set<Task> tasks = new HashSet<>();
 }

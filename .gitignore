@@ -3,4 +3,4 @@ target/
 *.log
 rendash.sh
 token.txt
-
+.vscode/

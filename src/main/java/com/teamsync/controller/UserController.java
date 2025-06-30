@@ -31,7 +31,7 @@ public class UserController {
     @GetMapping("/{id}")
     public User getUserById(@PathVariable UUID id) {
         return userService.getUserById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id " + id));
+            .orElseThrow(() -> new ResourceNotFoundException("User not found with id " + id));
     }
 
     // Retrieve all users

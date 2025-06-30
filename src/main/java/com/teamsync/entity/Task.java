@@ -5,6 +5,8 @@ import jakarta.persistence.*;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -23,7 +25,7 @@ public class Task {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Status status;
+    private Status status = Status.TODO;
 
     @Column(name = "due_date")
     private LocalDateTime dueDate;
@@ -34,10 +36,13 @@ public class Task {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<StatusHistory> statusHistory = new ArrayList<>();
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
-        this.status = Task.Status.TODO; // Default status
+        this.status = Status.TODO; // Default status when a task is created
     }
 
     @PreUpdate
@@ -47,18 +52,15 @@ public class Task {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "assignee_id", nullable = false)
-    @JsonBackReference
+    @JsonBackReference(value = "task-assignee")
     private User assignee;
 
-    @Enumerated(EnumType.STRING)
-    @Column
-    private Priority priority;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "assigner_id", nullable = false)
+    @JsonBackReference(value = "task-assigner")
+    private User assigner; // New field to store the assigner
 
     public enum Status {
         TODO, IN_PROGRESS, DONE
-    }
-
-    public enum Priority {
-        LOW, MEDIUM, HIGH
     }
 }
