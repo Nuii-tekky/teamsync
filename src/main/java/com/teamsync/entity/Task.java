@@ -42,7 +42,7 @@ public class Task {
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
-        this.status = Status.TODO; // Default status when a task is created
+        this.status = Status.TODO;
     }
 
     @PreUpdate
@@ -58,7 +58,12 @@ public class Task {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "assigner_id", nullable = false)
     @JsonBackReference(value = "task-assigner")
-    private User assigner; // New field to store the assigner
+    private User assigner;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "project_id", nullable = false)
+    @JsonBackReference(value = "project-tasks")
+    private Project project;
 
     public enum Status {
         TODO, IN_PROGRESS, DONE

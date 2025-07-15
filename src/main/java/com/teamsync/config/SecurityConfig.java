@@ -25,6 +25,9 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/register", "/api/auth/login").permitAll()
+                .requestMatchers("/api/projects", "/api/projects/{projectId}/invite/{userId}", "/api/projects/{projectId}/tasks/**").hasAnyRole("ADMIN", "MEMBER")
+                .requestMatchers("/api/projects/{projectId}/accept/{userId}", "/api/projects/{projectId}/reject/{userId}").hasRole("GUEST")
+                .requestMatchers("/api/projects/{projectId}/remove/{userId}", "/api/projects/{projectId}").hasRole("ADMIN")
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
@@ -37,4 +40,3 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 }
-

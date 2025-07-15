@@ -1,9 +1,8 @@
 package com.teamsync.entity;
 
 import jakarta.persistence.*;
-
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
-
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -16,7 +15,7 @@ import java.util.Set;
 import java.util.UUID;
 
 @Entity
-@Table(name = "users")
+@Table(name = "users", indexes = {@Index(columnList = "email", unique = true)})
 @Data
 public class User {
     @Id
@@ -25,6 +24,7 @@ public class User {
 
     @NotBlank(message = "Email is required")
     @Email(message = "Invalid email format")
+    @Column(nullable = false, unique = true)
     private String email;
 
     @NotBlank(message = "Password is required")
@@ -48,7 +48,11 @@ public class User {
         this.createdAt = LocalDateTime.now();
     }
 
-    @OneToMany(mappedBy = "assignee", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonManagedReference(value = "task-assignee") 
+    @OneToMany(mappedBy = "assignee", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @JsonManagedReference(value = "task-assignee")
     private Set<Task> tasks = new HashSet<>();
+
+    @ManyToMany(mappedBy = "members", fetch = FetchType.LAZY)
+    @JsonBackReference(value = "project-members")
+    private Set<Project> projects = new HashSet<>();
 }
